@@ -46,6 +46,16 @@ class CapabilityResult:
     capabilities_used: list[str] = field(default_factory=list)
     internet_sources: int = 0
 
+    def kernel_execution_failed(self) -> bool:
+        """True when generic_summary reports a real Kernel-side execution
+        failure (not an LLM false-denial). Used to bypass the LLM entirely
+        for the final response, since a small local model has been observed
+        fabricating plausible-looking fake data instead of reliably
+        following the 'admit the failure' instruction in the prompt.
+        """
+        lower_summary = self.generic_summary.lower()
+        return "failed" in lower_summary or "erro" in lower_summary
+
     def has_tool_output(self) -> bool:
         return bool(
             self.search_summary
@@ -129,8 +139,7 @@ class CapabilityResult:
             )
 
         if self.generic_summary:
-            lower_summary = self.generic_summary.lower()
-            if "failed" in lower_summary or "erro" in lower_summary:
+            if self.kernel_execution_failed():
                 sections.append(
                     f"## [CRITICAL ERROR] Falha na Execução pelo Kernel\n"
                     f"{self.generic_summary}\n\n"

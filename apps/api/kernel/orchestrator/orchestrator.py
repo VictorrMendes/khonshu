@@ -334,8 +334,24 @@ class CognitiveOrchestrator:
                 await on_step(trace.nodes[-1])
 
             # ── 6. Generate response ─────────────────────────────────────────
+            # A real Kernel-side execution failure bypasses the LLM entirely:
+            # a small local model has been observed ignoring the explicit
+            # "admit the failure, never fabricate success" instruction and
+            # inventing plausible-looking fake data instead. A deterministic
+            # message guarantees honesty for this case at the cost of a less
+            # natural response.
+            kernel_failed = cap_result.kernel_execution_failed()
             if suspended_question:
                 response_text = suspended_question
+            elif kernel_failed:
+                response_text = (
+                    "Não consegui concluir essa ação — houve uma falha na "
+                    f"execução: {cap_result.generic_summary}"
+                )
+                gen_node = trace.begin("generate", "DeterministicFailureResponse")
+                trace.complete(gen_node, "bypassed LLM: kernel execution failed")
+                if on_token:
+                    await on_token(response_text)
             else:
                 response_text = await self._generate(
                     request, ctx, cap_result, trace, on_token
@@ -344,7 +360,7 @@ class CognitiveOrchestrator:
                     await on_step(trace.nodes[-1])
 
             # ── 7. Validate response ─────────────────────────────────────────
-            if not suspended_question:
+            if not suspended_question and not kernel_failed:
                 response_text = await self._validate_response(
                     response_text, cap_result, intent, trace
                 )
