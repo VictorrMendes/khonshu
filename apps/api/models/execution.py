@@ -61,20 +61,30 @@ class Execution(Base):
     __tablename__ = "executions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    workspace_id = Column(UUID(as_uuid=True), ForeignKey("workspaces.id"), nullable=False)
-    
+    workspace_id = Column(UUID(as_uuid=True), ForeignKey("workspaces.id"), nullable=False, index=True)
+
+    # ADR-012: optional owning Mission. Nullable — not every Execution comes
+    # from a Mission (e.g. a one-off question has no Mission at all).
+    mission_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("missions.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
     # Goal represents the abstract objective
     goal = Column(String, nullable=False)
     status = Column(String, default=ExecutionStatus.PENDING.value, nullable=False)
-    
+
     # Variables mutated during execution (WorldState dependencies or accumulated payload)
     context = Column(JSONB, default=dict)
-    
+
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
     started_at = Column(DateTime(timezone=True), nullable=True)
     finished_at = Column(DateTime(timezone=True), nullable=True)
-    
+
     steps = relationship("ExecutionStep", back_populates="execution", cascade="all, delete-orphan")
+    mission = relationship("Mission", back_populates="executions")
 
 
 class ExecutionStep(Base):

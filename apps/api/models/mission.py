@@ -245,6 +245,14 @@ class Mission(Base):
         back_populates="mission",
         cascade="all, delete-orphan",
     )
+    # ADR-012: Execution is the canonical runtime unit; Mission aggregates
+    # the Executions it spawned during planning. Lives in models/execution.py
+    # (a separate, newer schema — see ADR-012 for the reconciliation plan).
+    executions: Mapped[list["Execution"]] = relationship(
+        "Execution",
+        back_populates="mission",
+        foreign_keys="Execution.mission_id",
+    )
 
     def can_transition_to(self, target: MissionStatus) -> bool:
         allowed: set = MissionStatus.TRANSITIONS.get(  # type: ignore[attr-defined]

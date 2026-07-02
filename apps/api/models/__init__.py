@@ -1,6 +1,14 @@
 from .base import Base
 from .conversation import Conversation, Message, MessageRole
 from .document import Document, DocumentChunk, DocumentStatus
+from .execution import (
+    Execution,
+    ExecutionStatus,
+    ExecutionStep,
+    Interaction,
+    InteractionType,
+)
+from .execution import StepStatus as ExecutionStepStatus
 from .memory import Memory, MemoryType
 from .mission import (
     Mission,
@@ -63,4 +71,10 @@ __all__ = [
     "SchedulerTrigger",
     "TriggerType",
     "TriggerStatus",
+    "Execution",
+    "ExecutionStatus",
+    "ExecutionStep",
+    "ExecutionStepStatus",
+    "Interaction",
+    "InteractionType",
 ]
