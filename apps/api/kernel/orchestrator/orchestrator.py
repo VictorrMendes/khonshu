@@ -546,6 +546,20 @@ class CognitiveOrchestrator:
                     violated_cap = "calendar"
                     break
 
+        # Positive check: if real calendar events exist, the response must
+        # reference at least one of them. Catches any denial phrasing at
+        # all -- not just the ones enumerated above -- because it checks
+        # for the presence of real data instead of the absence of specific
+        # words. Three distinct denial phrasings slipped past the phrase
+        # blacklist in production before this was added.
+        if not invalid:
+            event_titles = cap_result.calendar_event_titles()
+            if event_titles and not any(
+                title.lower() in response.lower() for title in event_titles
+            ):
+                invalid = True
+                violated_cap = "calendar_data_ignored"
+
         if (cap_result.weather_summary or (cap_result.generic_summary and "weather" in cap_result.generic_summary.lower())) and not invalid:
             for pattern in _INVALID_WEATHER_PHRASES:
                 if re.search(pattern, response, re.IGNORECASE):

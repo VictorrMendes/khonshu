@@ -12,11 +12,17 @@ Principles:
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 from uuid import UUID
 
 from kernel.logger import get_logger
+
+# Matches a 'summary'/"summary" key in the stringified dict repr of a
+# calendar event (e.g. Google Calendar's event.summary field), regardless
+# of quote style (Python dict str() uses single quotes, JSON uses double).
+_EVENT_SUMMARY_RE = re.compile(r"""['"]summary['"]\s*:\s*['"]([^'"]{2,})['"]""")
 
 if TYPE_CHECKING:
     from engines.mission import MissionEngine
@@ -55,6 +61,21 @@ class CapabilityResult:
         """
         lower_summary = self.generic_summary.lower()
         return "failed" in lower_summary or "erro" in lower_summary
+
+    def calendar_event_titles(self) -> list[str]:
+        """Extracts real event titles from calendar_summary, if any.
+
+        Used as a positive check: if real events exist, the final response
+        must reference at least one of them, regardless of what specific
+        words the LLM used to (falsely) deny access. This is far more
+        robust than a phrase blacklist, which only ever catches denial
+        wordings someone already anticipated -- three different phrasings
+        of the same false denial were observed in production before this
+        existed, each slipping past the previous patch.
+        """
+        if not self.calendar_summary:
+            return []
+        return _EVENT_SUMMARY_RE.findall(self.calendar_summary)
 
     def has_tool_output(self) -> bool:
         return bool(
