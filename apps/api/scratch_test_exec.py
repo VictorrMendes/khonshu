@@ -6,7 +6,7 @@ import sys
 sys.path.append(os.path.abspath("apps/api"))
 
 from kernel.orchestrator.execution_planner import execution_planner
-from kernel.providers.llm.ollama import OllamaProvider
+from kernel.providers.ollama import OllamaProvider
 from kernel.plugins.plugin_manager import plugin_manager
 from pydantic import BaseModel
 
@@ -19,7 +19,7 @@ async def test():
     plugin_manager.load_all()
     
     # Init LLM
-    llm = OllamaProvider(model="llama3.1:8b")
+    llm = OllamaProvider(model="qwen2.5:3b")
     
     # Create a task
     tasks = [DummyTask(id="task_1", description="Adicione a tarefa 'Comprar mantimentos para a semana' no todoist com a descrição 'Incluir frutas, legumes e proteínas'.")]

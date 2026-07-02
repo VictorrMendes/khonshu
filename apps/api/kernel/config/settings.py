@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
 
     ollama_base_url: str = "http://localhost:11434"
-    ollama_default_model: str = "qwen3:8b"
+    ollama_default_model: str = "qwen2.5:3b"
     ollama_embedding_model: str = "nomic-embed-text"
 
     ntfy_url: str = "http://localhost:2586"
