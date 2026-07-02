@@ -1,4 +1,4 @@
-from typing import Any
+from datetime import UTC, datetime
 from models.execution import ExecutionStep, StepStatus
 from kernel.logger import get_logger
 from kernel.execution.dispatcher import dispatcher
@@ -22,19 +22,22 @@ class Scheduler:
         
         if current_status == StepStatus.READY or current_status == StepStatus.PENDING.value:
             node.status = StepStatus.RUNNING.value
+            node.started_at = datetime.now(UTC)
             # Transition to RUNNING and hand off to dispatcher immediately
             await dispatcher.dispatch(node, workspace_id)
-            
+
         elif current_status == StepStatus.WAITING:
             # E.g. waiting for a webhook or approval
             node.status = StepStatus.PAUSED.value
             logger.info("scheduler.paused", node_id=node.id, reason="waiting for event")
-            
+
         elif current_status == StepStatus.RETRYING:
             # E.g. apply exponential backoff before dispatching again
             logger.info("scheduler.backoff", node_id=node.id, attempt=node.retry_count)
             # await asyncio.sleep(backoff_time)
             node.status = StepStatus.RUNNING.value
+            if node.started_at is None:
+                node.started_at = datetime.now(UTC)
             await dispatcher.dispatch(node, workspace_id)
             
         else:

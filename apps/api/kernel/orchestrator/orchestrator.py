@@ -311,10 +311,11 @@ class CognitiveOrchestrator:
                             suspended_question = question
                             break # Halt execution of further steps
                             
-                        elif getattr(step, 'error', None):
-                            results.append(f"Action '{step.capability}' failed: {step.error}")
+                        elif step.status == StepStatus.FAILED.value:
+                            error = (step.output or {}).get("error", "unknown error")
+                            results.append(f"Action '{step.capability}' failed: {error}")
                         else:
-                            results.append(f"Action '{step.capability}' result: {getattr(step, 'result', step.output)}")
+                            results.append(f"Action '{step.capability}' result: {step.output}")
                             
                     cap_result = CapabilityResult(
                         generic_summary="\\n".join(results) if results else "Kernel execution completed with no output.",

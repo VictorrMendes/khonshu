@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
-from models.execution import ExecutionStep
+from datetime import UTC, datetime
+from typing import Dict
+from models.execution import ExecutionStep, StepStatus
 from kernel.logger import get_logger
 
 logger = get_logger(__name__)
@@ -15,9 +16,20 @@ class ExecutionDriver(ABC):
 
 
 class RestDriver(ExecutionDriver):
+    """
+    Fallback driver for generic (non-n8n) REST capabilities.
+
+    No capability in the current registry uses this path — every capability
+    discovered under plugins/*/capabilities today is n8n-prefixed and routed
+    to RestN8NDriver instead (see Dispatcher.dispatch). Until a real generic
+    REST target exists, this driver fails the node explicitly rather than
+    leaving it silently stuck in RUNNING with no output.
+    """
     async def execute(self, node: ExecutionStep, workspace_id: str) -> None:
-        logger.info("driver.rest.executing", capability=node.capability, node_id=str(node.id))
-        # Here we would make an HTTP request to the target (e.g. n8n)
+        logger.warning("driver.rest.not_implemented", capability=node.capability, node_id=str(node.id))
+        node.output = {"error": f"No generic REST driver implemented for capability '{node.capability}'."}
+        node.status = StepStatus.FAILED.value
+        node.finished_at = datetime.now(UTC)
 
 
 class Dispatcher:
@@ -43,7 +55,9 @@ class Dispatcher:
         if not driver:
             logger.error("dispatcher.missing_driver", protocol=protocol)
             # Fail the node if driver is missing
-            node.error = f"Missing driver: {protocol}"
+            node.output = {"error": f"Missing driver: {protocol}"}
+            node.status = StepStatus.FAILED.value
+            node.finished_at = datetime.now(UTC)
             return
             
         await driver.execute(node, workspace_id)
