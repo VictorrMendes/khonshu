@@ -67,6 +67,12 @@ _INVALID_CALENDAR_PHRASES = [
     r"não possuo calendário",
     r"sem acesso (?:ao )?calendário",
     r"não tenho integração de calendário",
+    # Second-person framing ("você não possui...") and the English
+    # "Calendar" wording (e.g. "Google Calendar") slip past the
+    # first-person-only patterns above.
+    r"(?:não|nao)\s+(?:possui|possuo|tenho|tem)\s+(?:uma\s+)?integra[çc][ãa]o.{0,80}?(?:calend[aá]rio|calendar)",
+    r"integra[çc][ãa]o.{0,80}?(?:calend[aá]rio|calendar).{0,40}?(?:não|nao)\s+(?:est[áa]|foi)\s+configurad",
+    r"precis(?:a|o)\s+(?:que\s+)?(?:você\s+)?configur\w*.{0,60}?(?:calend[aá]rio|calendar)",
 ]
 _INVALID_WEATHER_PHRASES = [
     r"não consigo verificar (?:o )?clima",
